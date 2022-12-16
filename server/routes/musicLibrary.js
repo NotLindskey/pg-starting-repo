@@ -18,7 +18,7 @@ router.get("/", (req, res) => {
 // to test and see if route is set up correctly
 router.get("/:id", (req, res) => {
 	console.log("Hello from get request!", req.params.id);
-	const queryText = `SELECT * from songs WHERE id = ${req.params.id};`;
+	const queryText = `SELECT * from songs ORDER BY id asc;`;
 	pool
 		.query(queryText)
 		.then((result) => {
@@ -38,7 +38,7 @@ router.delete("/:id", (req, res) => {
 		.query(queryText)
 		.then((result) => {
 			console.log(result);
-			res.sendStatus(202);
+			res.send(result.rows);
 		})
 		.catch((error) => {
 			console.log("error making a query", error);
@@ -73,8 +73,31 @@ router.post("/", (req, res) => {
 
 router.put("/rank/:id", (req, res) => {
 	console.log("rank id", req.params.id);
-	console.log("rank body", req.body);
-	res.sendStatus(200);
+	console.log("rank body", req.body.direction);
+	const direction = req.body.direction;
+	let queryText = "";
+
+	if (direction == "up") {
+		// increase rank
+		queryText = `UPDATE "songs" SET "rank"=rank + 1 WHERE "id"= ${req.params.id};`;
+	} else if (direction == "down") {
+		// decrease rank
+		queryText = `UPDATE "songs" SET "rank"=rank - 1 WHERE "id"= ${req.params.id};`;
+	} else {
+		res.sendStatus(500);
+		return;
+	}
+
+	pool
+		.query(queryText)
+		.then((dbResponse) => {
+			console.log("dbResponse", dbResponse);
+			res.sendStatus(201);
+		})
+		.catch((error) => {
+			console.log(error);
+			res.sendStatus(500);
+		});
 });
 
 module.exports = router;
